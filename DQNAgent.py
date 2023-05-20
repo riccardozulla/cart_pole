@@ -10,7 +10,7 @@ Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state'
 
 class DQNagent():
     def __init__(self, env, nInputs, nOutputs, criterion, device) -> None:
-        self.BATCH_SIZE = 128
+        self.BATCH_SIZE = 64 # 64 # 256
         self.GAMMA = 0.99
         # self.EPS_START = 0.9
         # self.EPS_END = 0.05
@@ -25,8 +25,8 @@ class DQNagent():
 
         self.previousState = None
 
-        self.policy_net = DQN(nInputs, nOutputs).to(device)
-        self.target_net = DQN(nInputs, nOutputs).to(device)
+        self.policy_net = DQNetwork(nInputs, nOutputs).to(device)
+        self.target_net = DQNetwork(nInputs, nOutputs).to(device)
 
         # copia la policy e la mette nella target.
         self.target_net.load_state_dict(self.policy_net.state_dict())
@@ -39,22 +39,23 @@ class DQNagent():
         self.previousState = None
         self.previousAction = None
 
-    def step(self, state, previousReward): #, steps):
-        if (previousReward is not None):
-            # salva in memoria
-            self.memory.push(self.previousState, self.previousAction, previousReward, state)
+    def saveInMemory(self, state, action, reward, nextState):
+        if(reward != None):
+            self.memory.push(state, action, reward, nextState)
 
-        # ESP_THRESHOLD = self.EPS_END + (self.EPS_START - self.EPS_END) * math.exp(-1. * steps / self.EPS_DECAY)
-
+    def selectMove(self, state):
         sample = random.random()
-        
-        # print("Random sample: ", sample)
-        # print("Epsilon: ", self.fixed_EPS)
-
         if sample < self.fixed_EPS:
             action = self.explorationAction()
         else:
             action = self.greedyAction(state)
+        return action
+    
+    # ESP_THRESHOLD = self.EPS_END + (self.EPS_START - self.EPS_END) * math.exp(-1. * steps / self.EPS_DECAY)
+
+    def step(self, state, previousReward): #, steps):
+        self.saveInMemory(self.previousState, self.previousAction, previousReward, state)
+        action = self.selectMove(state)
 
         self.previousState = state
         self.previousAction = action
@@ -65,11 +66,12 @@ class DQNagent():
         return action
     
     def greedyAction(self, state):
-        return self.policy_net(state).max(1)[1].view(1, 1)
+        with torch.no_grad():
+            action = self.policy_net(state).max(1)[1].view(1, 1)
+        return action
 
     def explorationAction(self):
-        return torch.tensor([self.env.action_space.sample()], dtype=torch.long, device=self.device)
-
+        return torch.tensor([[self.env.action_space.sample()]], dtype=torch.long, device=self.device)
 
     def optimize_model(self):
         if len(self.memory) < self.BATCH_SIZE:
@@ -87,7 +89,6 @@ class DQNagent():
             expected_state_action_values = self.GAMMA * self.target_net(next_state).max(1)[0] + reward_batch
         state_action_values = self.policy_net(state_batch).gather(1, action_batch)
 
-
         loss = self.criterion(state_action_values, expected_state_action_values.unsqueeze(1))
         self.optimizer.zero_grad()
         loss.backward()
@@ -96,14 +97,11 @@ class DQNagent():
         self.optimizer.step()
 
     def softUpdate(self):
-        target_weights = self.target_net.state_dict()  # prende i weights
-        policy_weights = self.policy_net.state_dict()
-
-        # aggiorna i pesi della target di TAU
-        for key in target_weights.keys():
-            target_weights[key] = (1-self.TAU) * target_weights[key] + self.TAU * policy_weights[key]
-
-        self.target_net.load_state_dict(target_weights)
+        target_net_state_dict = self.target_net.state_dict()
+        policy_net_state_dict = self.policy_net.state_dict()
+        for key in policy_net_state_dict:
+            target_net_state_dict[key] = policy_net_state_dict[key]*self.TAU + target_net_state_dict[key]*(1-self.TAU)
+        self.target_net.load_state_dict(target_net_state_dict)
 
 class ReplayMemory():
     def __init__(self, capacity=1000) -> None:
@@ -118,11 +116,11 @@ class ReplayMemory():
     def __len__(self):
         return len(self.memory)
 
-class DQN(nn.Module):
+class DQNetwork(nn.Module):
 
     def __init__(self, n_observations, n_actions):
         # inizializza module, trovare commento adeguato
-        super(DQN, self).__init__()
+        super(DQNetwork, self).__init__()
         self.layer1 = nn.Linear(n_observations, 128)
         self.layer2 = nn.Linear(128, 128)
         self.layer3 = nn.Linear(128, n_actions)
