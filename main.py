@@ -1,5 +1,5 @@
 import gymnasium as gym
-from PolicyAgent import DQNagent
+from DQNAgent import DQNagent
 from collections import namedtuple
 import torch
 
@@ -20,12 +20,10 @@ for n in range(EPISODES):
         action = env.action_space.sample()
         action = agent.step(state, previousReward, steps=steps)
         observation, reward, terminated, truncated, _ = env.step(action.item())
-        observation = torch.tensor(
-            observation, dtype=torch.float32, device=device).unsqueeze(0)  # voglio che abbia già implementata la dimensione dei batch
+        observation = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)  # voglio che abbia già implementata la dimensione dei batch
         total_reward += reward
 
-        reward = torch.tensor(reward, dtype=torch.float32,
-                              device=device).unsqueeze(0)
+        reward = torch.tensor(reward, dtype=torch.float32, device=device).unsqueeze(0)
         previousReward = reward
 
         state = observation

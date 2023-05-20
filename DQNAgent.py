@@ -11,7 +11,6 @@ Transition = namedtuple(
 
 class DQNagent():
     def __init__(self, env, nInputs, nOutputs, criterion, device) -> None:
-
         self.BATCH_SIZE = 128
         self.GAMMA = 0.99
         self.EPS_START = 0.9
@@ -43,18 +42,14 @@ class DQNagent():
     def step(self, state, previousReward, steps):
         if (previousReward is not None):
             # salva in memoria
-            self.memory.push(self.previousState,
-                             self.previousAction, previousReward, state)
+            self.memory.push(self.previousState, self.previousAction, previousReward, state)
 
-        ESP_THRESHOLD = self.EPS_END + \
-            (self.EPS_START - self.EPS_END) * \
-            math.exp(-1. * steps / self.EPS_DECAY)
+        ESP_THRESHOLD = self.EPS_END + (self.EPS_START - self.EPS_END) * math.exp(-1. * steps / self.EPS_DECAY)
 
         sample = random.random()
 
         if sample > ESP_THRESHOLD:
-            action = torch.tensor(
-                [self.env.action_space.sample()], dtype=torch.long, device=self.device)
+            action = torch.tensor([self.env.action_space.sample()], dtype=torch.long, device=self.device)
         else:
             action = self.policy_net(state).max(1)[1]
 
@@ -76,10 +71,8 @@ class DQNagent():
         next_state = torch.cat(batch.next_state)  # ...
 
         with torch.no_grad():
-            estimated_Qs = reward + self.GAMMA * \
-                self.target_net(next_state).max(1)[0]
-        predicted_Qs = self.policy_net(state).gather(
-            1, action.unsqueeze(0)).squeeze(0)
+            estimated_Qs = reward + self.GAMMA * self.target_net(next_state).max(1)[0]
+        predicted_Qs = self.policy_net(state).gather(1, action.unsqueeze(0)).squeeze(0)
         loss = self.criterion(predicted_Qs, estimated_Qs)
         self.optimizer.zero_grad()
         loss.backward()
@@ -91,9 +84,7 @@ class DQNagent():
 
         # aggiorna i pesi della target di TAU
         for key in target_weights.keys():
-            target_weights[key] = \
-                (1-self.TAU) * target_weights[key] + \
-                self.TAU * policy_weights[key]
+            target_weights[key] = (1-self.TAU) * target_weights[key] + self.TAU * policy_weights[key]
 
         self.target_net.load_state_dict(target_weights)
 
