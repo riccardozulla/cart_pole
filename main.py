@@ -6,7 +6,7 @@ import torch
 
 EPISODES = 500
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-env = gym.make('CartPole-v1', render_mode="human")
+env = gym.make('CartPole-v1')
 agent = DQNagent(env, 4, 2, torch.nn.HuberLoss(), device)
 
 for n in range(EPISODES):

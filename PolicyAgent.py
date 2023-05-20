@@ -12,13 +12,13 @@ Transition = namedtuple(
 class DQNagent():
     def __init__(self, env, nInputs, nOutputs, criterion, device) -> None:
 
-        self.BATCH_SIZE = 3
+        self.BATCH_SIZE = 128
         self.GAMMA = 0.99
         self.EPS_START = 0.9
         self.EPS_END = 0.05
         self.EPS_DECAY = 1000
         self.TAU = 0.005
-        self.LR = 1e-4
+        self.LR = 1e-3
 
         self.env = env
         self.device = device
@@ -39,10 +39,9 @@ class DQNagent():
 
         self.previousState = None
         self.previousAction = None
-        self.previousReward = None
 
     def step(self, state, previousReward, steps):
-        if (self.previousReward is not None):
+        if (previousReward is not None):
             # salva in memoria
             self.memory.push(self.previousState,
                              self.previousAction, previousReward, state)
@@ -79,8 +78,8 @@ class DQNagent():
         with torch.no_grad():
             estimated_Qs = reward + self.GAMMA * \
                 self.target_net(next_state).max(1)[0]
-        predicted_Qs = self.policy_net(state).gather(1, action.unsqueeze(0))
-
+        predicted_Qs = self.policy_net(state).gather(
+            1, action.unsqueeze(0)).squeeze(0)
         loss = self.criterion(predicted_Qs, estimated_Qs)
         self.optimizer.zero_grad()
         loss.backward()
@@ -95,6 +94,7 @@ class DQNagent():
             target_weights[key] = \
                 (1-self.TAU) * target_weights[key] + \
                 self.TAU * policy_weights[key]
+
         self.target_net.load_state_dict(target_weights)
 
 
