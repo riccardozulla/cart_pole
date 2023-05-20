@@ -1,6 +1,7 @@
 import gymnasium as gym
 
 EPISODES = 1
+# human is to see the environment
 env = gym.make('CartPole-v1', render_mode="human")
 
 for n in range(EPISODES):
