@@ -1,38 +1,59 @@
 import gymnasium as gym
 from DQNAgent import DQNagent
-from collections import namedtuple
 import torch
+import matplotlib.pyplot as plt
+from itertools import count
 
+def plot_durations(show_result=False):
+    plt.figure(1)
+    durations_t = torch.tensor(episode_durations, dtype=torch.float)
+    if show_result:
+        plt.title('Result')
+    else:
+        plt.clf()
+        plt.title('Training...')
+    plt.xlabel('Episode')
+    plt.ylabel('Duration')
+    plt.plot(durations_t.numpy())
+    # Take 100 episode averages and plot them too
+    if len(durations_t) >= 100:
+        means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
+        means = torch.cat((torch.zeros(99), means))
+        plt.plot(means.numpy())
 
-EPISODES = 500
+    # plt.pause(0.001)  # pause a bit so that plots are updated
+    # if is_ipython:
+    #     if not show_result:
+    #         display.display(plt.gcf())
+    #         display.clear_output(wait=True)
+    #     else:
+    #         display.display(plt.gcf())
+
+EPISODES = 100
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-env = gym.make('CartPole-v1')
+env = gym.make('CartPole-v1') #, render_mode = "human")
 agent = DQNagent(env, 4, 2, torch.nn.HuberLoss(), device)
+
+episode_durations = []
 
 for n in range(EPISODES):
     steps = 0
     state, _ = env.reset()
-    state = torch.tensor(state, dtype=torch.float32,
-                         device=device).unsqueeze(0)
+    state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
     previousReward = None
-    total_reward = 0
-    while True:
+    # total_reward = 0
+    # while True:
+    for t in count():
         action = env.action_space.sample()
-        action = agent.step(state, previousReward, steps=steps)
-        observation, reward, terminated, truncated, _ = env.step(action.item())
-        observation = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)  # voglio che abbia già implementata la dimensione dei batch
-        total_reward += reward
-
-        reward = torch.tensor(reward, dtype=torch.float32, device=device).unsqueeze(0)
-        previousReward = reward
-
-        state = observation
-        agent.optimize()
-
-        if terminated or truncated:
+        action = agent.step(state, previousReward)
+        state, reward, terminated, truncated, _ = env.step(action.item())
+        state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+        previousReward = torch.tensor([reward], device=device) # le quadre sono fondamentali
+        done = terminated or truncated
+        if done:
+            episode_durations.append(t + 1)
+            plot_durations()
             break
-
-        steps += 1
-    print(total_reward)
+    # print(reward)
 
 env.close()
