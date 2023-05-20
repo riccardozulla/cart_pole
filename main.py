@@ -22,16 +22,16 @@ def plot_durations(show_result=False):
     #     means = torch.cat((torch.zeros(99), means))
     #     plt.plot(means.numpy())
 
-    cumulative_sum = torch.cumsum(durations_t, dim=0)
-    means = cumulative_sum / torch.arange(1, len(durations_t) + 1)
-    plt.plot(means.numpy())
+    # cumulative_sum = torch.cumsum(durations_t, dim=0)
+    # means = cumulative_sum / torch.arange(1, len(durations_t) + 1)
+    # plt.plot(means.numpy())
 
     plt.pause(0.001)  # pause a bit so that plots are updated
 
 
 EPISODES = 600 #600
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-env = gym.make('CartPole-v1') #, render_mode = "human")
+env = gym.make('CartPole-v1', render_mode = "human")
 # agent = DQNagent(env, 4, 2, torch.nn.HuberLoss(), device)
 agent = DQNagent(env, 4, 2, torch.nn.SmoothL1Loss(), device) 
 
@@ -57,18 +57,18 @@ for n in range(EPISODES):
             print("Succeded!")
             action = agent.step(state, torch.tensor([10], device=device))
             episode_durations.append(t + 1)
-            plot_durations()
+            # plot_durations()
             break
         elif terminated: # failed
-            print("Failed.")
+            print("Failed. Duration: ", t)
             action = agent.step(state, torch.tensor([0], device=device))
             episode_durations.append(t + 1)
-            plot_durations()
+            # plot_durations()
             break
     # print(reward)
 
 print('Complete')
-plot_durations(show_result=True)
+# plot_durations(show_result=True)
 env.close()
 
 plt.ioff()
