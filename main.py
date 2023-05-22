@@ -33,7 +33,7 @@ EPISODES = 600
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 env = gym.make('CartPole-v1', render_mode = "human")
 # agent = DQNagent(env, 4, 2, torch.nn.HuberLoss(), device)
-agent = DQNagent(env, 4, 2, torch.nn.SmoothL1Loss(), device) 
+agent = DQNagent(4, 2, torch.nn.SmoothL1Loss(), device) 
 
 episode_durations = []
 

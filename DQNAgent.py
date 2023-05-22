@@ -9,7 +9,7 @@ Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state'
 
 
 class DQNagent():
-    def __init__(self, env, nInputs, nOutputs, criterion, device) -> None:
+    def __init__(self, nInputs, nOutputs, criterion, device) -> None:
         self.BATCH_SIZE = 64 # 64 # 256
         self.GAMMA = 0.99
         # self.EPS_START = 0.9
@@ -20,7 +20,6 @@ class DQNagent():
         self.TAU = 0.005
         self.LR = 1e-3
 
-        self.env = env
         self.device = device
 
         self.previousState = None
@@ -71,7 +70,10 @@ class DQNagent():
         return action
 
     def explorationAction(self):
-        return torch.tensor([[self.env.action_space.sample()]], dtype=torch.long, device=self.device)
+        # return torch.tensor([[self.env.action_space.sample()]], dtype=torch.long, device=self.device)
+        random_action = random.randint(0, 1)
+        return torch.tensor([[random_action]], dtype=torch.long, device=self.device)
+
 
     def optimize_model(self):
         if len(self.memory) < self.BATCH_SIZE:
