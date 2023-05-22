@@ -29,7 +29,7 @@ def plot_durations(show_result=False):
     plt.pause(0.001)  # pause a bit so that plots are updated
 
 
-EPISODES = 600 #600
+EPISODES = 600
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 env = gym.make('CartPole-v1', render_mode = "human")
 # agent = DQNagent(env, 4, 2, torch.nn.HuberLoss(), device)
@@ -57,13 +57,13 @@ for n in range(EPISODES):
             print("Succeded!")
             action = agent.step(state, torch.tensor([10], device=device))
             episode_durations.append(t + 1)
-            # plot_durations()
+            plot_durations()
             break
         elif terminated: # failed
             print("Failed. Duration: ", t)
             action = agent.step(state, torch.tensor([0], device=device))
             episode_durations.append(t + 1)
-            # plot_durations()
+            plot_durations()
             break
     # print(reward)
 

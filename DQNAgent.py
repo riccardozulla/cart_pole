@@ -53,7 +53,7 @@ class DQNagent():
     
     # ESP_THRESHOLD = self.EPS_END + (self.EPS_START - self.EPS_END) * math.exp(-1. * steps / self.EPS_DECAY)
 
-    def step(self, state, previousReward): #, steps):
+    def step(self, state, previousReward):                                                      #, steps):
         self.saveInMemory(self.previousState, self.previousAction, previousReward, state)
         action = self.selectMove(state)
 
@@ -76,7 +76,7 @@ class DQNagent():
     def optimize_model(self):
         if len(self.memory) < self.BATCH_SIZE:
             return
-
+        #print("training...")
         transitions = self.memory.sample(self.BATCH_SIZE)
 
         batch = Transition(*zip(*transitions)) # batch.state mi passa un array di tutti gli stati
