@@ -38,9 +38,13 @@ class DQNagent():
         self.previousState = None
         self.previousAction = None
 
-    def saveInMemory(self, state, action, reward, nextState):
+    def saveInMemory(self, state, action, reward, nextState): # qui è da inserire una transition
         if(reward != None):
             self.memory.push(state, action, reward, nextState)
+            # print("State: ", state)
+            # print("Action: ", action)
+            # print("Reward: ", reward)
+            # print("Next state: ", nextState)
 
     def selectMove(self, state):
         sample = random.random()
@@ -55,22 +59,19 @@ class DQNagent():
     def step(self, state, previousReward):                                                      #, steps):
         self.saveInMemory(self.previousState, self.previousAction, previousReward, state)
         action = self.selectMove(state)
-
         self.previousState = state
         self.previousAction = action
-
         self.optimize_model()
         self.softUpdate()
-
         return action
     
     def greedyAction(self, state):
+        print("State: ", state)
         with torch.no_grad():
             action = self.policy_net(state).max(1)[1].view(1, 1)
         return action
 
     def explorationAction(self):
-        # return torch.tensor([[self.env.action_space.sample()]], dtype=torch.long, device=self.device)
         random_action = random.randint(0, 1)
         return torch.tensor([[random_action]], dtype=torch.long, device=self.device)
 
@@ -88,8 +89,11 @@ class DQNagent():
         next_state = torch.cat(batch.next_state)  # ...
 
         with torch.no_grad():
-            expected_state_action_values = self.GAMMA * self.target_net(next_state).max(1)[0] + reward_batch
-        state_action_values = self.policy_net(state_batch).gather(1, action_batch)
+            expected_state_action_values = self.GAMMA * self.target_net.forward(next_state).max(1)[0] + reward_batch
+        state_action_values = self.policy_net.forward(state_batch).gather(1, action_batch)
+
+        #print("Expected-state-action-values: ", expected_state_action_values)
+        #print("State-action-values: ", state_action_values)
 
         loss = self.criterion(state_action_values, expected_state_action_values.unsqueeze(1))
         self.optimizer.zero_grad()
@@ -120,10 +124,9 @@ class ReplayMemory():
 
 class DQNetwork(nn.Module):
 
-    def __init__(self, n_observations, n_actions):
-        # inizializza module, trovare commento adeguato
+    def __init__(self, observationLenght, n_actions):
         super(DQNetwork, self).__init__()
-        self.layer1 = nn.Linear(n_observations, 128)
+        self.layer1 = nn.Linear(observationLenght, 128)
         self.layer2 = nn.Linear(128, 128)
         self.layer3 = nn.Linear(128, n_actions)
 
