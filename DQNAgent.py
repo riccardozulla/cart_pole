@@ -3,7 +3,6 @@ import torch.nn.functional as F
 from collections import deque, namedtuple
 import torch
 import random
-import math
 
 Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state'))
 
@@ -17,7 +16,7 @@ class DQNagent():
         # self.EPS_DECAY = 1000
         self.fixed_EPS = 0.1
 
-        self.TAU = 0.005
+        self.TAU = 0.05 # 0.005
         self.LR = 1e-3
 
         self.device = device
@@ -66,7 +65,7 @@ class DQNagent():
         return action
     
     def greedyAction(self, state):
-        print("State: ", state)
+        #print("State: ", state)
         with torch.no_grad():
             action = self.policy_net(state).max(1)[1].view(1, 1)
         return action
@@ -91,10 +90,7 @@ class DQNagent():
         with torch.no_grad():
             expected_state_action_values = self.GAMMA * self.target_net.forward(next_state).max(1)[0] + reward_batch
         state_action_values = self.policy_net.forward(state_batch).gather(1, action_batch)
-
-        #print("Expected-state-action-values: ", expected_state_action_values)
-        #print("State-action-values: ", state_action_values)
-
+        #print("State action values: ", state_action_values) -> tensore così: [[qValue], [qValue], ...
         loss = self.criterion(state_action_values, expected_state_action_values.unsqueeze(1))
         self.optimizer.zero_grad()
         loss.backward()
