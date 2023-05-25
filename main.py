@@ -15,18 +15,7 @@ def plot_durations(show_result=False):
     plt.xlabel('Episode')
     plt.ylabel('Duration')
     plt.plot(durations_t.numpy())
-    # Take 100 episode averages and plot them too
-
-    # if len(durations_t) >= 100:
-    #     means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
-    #     means = torch.cat((torch.zeros(99), means))
-    #     plt.plot(means.numpy())
-
-    # cumulative_sum = torch.cumsum(durations_t, dim=0)
-    # means = cumulative_sum / torch.arange(1, len(durations_t) + 1)
-    # plt.plot(means.numpy())
-
-    plt.pause(0.001)  # pause a bit so that plots are updated
+    plt.pause(0.001)
 
 
 EPISODES = 600
@@ -38,20 +27,15 @@ agent = DQNagent(4, 2, torch.nn.SmoothL1Loss(), device)
 episode_durations = []
 
 for n in range(EPISODES):
-    steps = 0
+    #steps = 0
     state, _ = env.reset()
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
-    # print("Initial: ", state)
     previousReward = None
-    # print(previousReward)
-    # total_reward = 0
-    # while True:
     for t in count():
         action = agent.step(state, previousReward)
         state, reward, terminated, truncated, _ = env.step(action.item())
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
         previousReward = torch.tensor([reward], device=device) # le quadre sono fondamentali
-        # done = terminated or truncated
         if truncated: # succeded!
             print("Succeded!")
             action = agent.step(state, torch.tensor([10], device=device))
@@ -64,10 +48,7 @@ for n in range(EPISODES):
             episode_durations.append(t + 1)
             plot_durations()
             break
-    # print(reward)
-
 print('Complete')
-# plot_durations(show_result=True)
 env.close()
 
 plt.ioff()
