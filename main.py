@@ -47,7 +47,6 @@ for n in range(EPISODES):
     # total_reward = 0
     # while True:
     for t in count():
-        action = env.action_space.sample()
         action = agent.step(state, previousReward)
         state, reward, terminated, truncated, _ = env.step(action.item())
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
