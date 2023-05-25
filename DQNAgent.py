@@ -16,7 +16,7 @@ class DQNagent():
         # self.EPS_DECAY = 1000
         self.fixed_EPS = 0.1
 
-        self.TAU = 0.05 # 0.005
+        self.TAU = 0.005 # 0.005
         self.LR = 1e-3
 
         self.device = device

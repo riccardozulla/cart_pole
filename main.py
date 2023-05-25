@@ -60,7 +60,7 @@ for n in range(EPISODES):
             break
         elif terminated: # failed
             print("Failed. Duration: ", t)
-            action = agent.step(state, torch.tensor([0], device=device))
+            action = agent.step(state, torch.tensor([-1], device=device))
             episode_durations.append(t + 1)
             plot_durations()
             break
