@@ -6,4 +6,9 @@ At the moment, it works fine and successfully completes the task in less than 10
 Being that this is just an exercise, we do not save the weights of the neural networks. If you want to see the episodes and the cart pole in action, simply set the render mode to "human". 
 If you're more interested in observing the performance, there is a commented part that plots the results.
 
+Epsilon decay strategy: eps halved after every success, the training is not necessary anymore if it constantly succeed.
+![image](https://github.com/riccardozulla/cart_pole/assets/40965802/91d8c315-425f-49d7-a473-833767f1b011)
+
+As you can see it constantly succeed after 140 episodes more or less.
+
 Feel free to contact us for any reason. We appreciate your feedback and suggestions. Enjoy exploring the code!
