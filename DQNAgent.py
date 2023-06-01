@@ -6,44 +6,34 @@ import random
 
 Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state'))
 
-
 class DQNagent():
     def __init__(self, nInputs, nOutputs, criterion, device) -> None:
         self.BATCH_SIZE = 64 # 64 # 256
         self.GAMMA = 0.99
-        # self.EPS_START = 0.9
-        # self.EPS_END = 0.05
-        # self.EPS_DECAY = 1000
         self.fixed_EPS = 0.1
-
         self.TAU = 0.005 # 0.005
         self.LR = 1e-3
-
         self.device = device
-
         self.previousState = None
-
         self.policy_net = DQNetwork(nInputs, nOutputs).to(device)
         self.target_net = DQNetwork(nInputs, nOutputs).to(device)
-
-        # copia la policy e la mette nella target.
         self.target_net.load_state_dict(self.policy_net.state_dict())
-
         self.criterion = criterion
         self.optimizer = torch.optim.AdamW(self.policy_net.parameters(), lr=self.LR)
-
         self.memory = ReplayMemory(10000)
-
         self.previousState = None
         self.previousAction = None
+
+        self.decay = 0.9
+
+    def epsDecay(self):
+        self.fixed_EPS = self.fixed_EPS * self.decay
+        if(self.fixed_EPS < 0.0001):
+            self.fixed_EPS = 0
 
     def saveInMemory(self, state, action, reward, nextState): # qui è da inserire una transition
         if(reward != None):
             self.memory.push(state, action, reward, nextState)
-            # print("State: ", state)
-            # print("Action: ", action)
-            # print("Reward: ", reward)
-            # print("Next state: ", nextState)
 
     def selectMove(self, state):
         sample = random.random()
@@ -53,19 +43,17 @@ class DQNagent():
             action = self.greedyAction(state)
         return action
     
-    # ESP_THRESHOLD = self.EPS_END + (self.EPS_START - self.EPS_END) * math.exp(-1. * steps / self.EPS_DECAY)
-
-    def step(self, state, previousReward):                                                      #, steps):
+    def step(self, state, previousReward):                                                 
         self.saveInMemory(self.previousState, self.previousAction, previousReward, state)
         action = self.selectMove(state)
         self.previousState = state
         self.previousAction = action
-        self.optimize_model()
-        self.softUpdate()
+        if(self.fixed_EPS > 0.005):
+            self.optimize_model()
+            self.softUpdate()
         return action
     
     def greedyAction(self, state):
-        #print("State: ", state)
         with torch.no_grad():
             action = self.policy_net(state).max(1)[1].view(1, 1)
         return action
@@ -74,11 +62,9 @@ class DQNagent():
         random_action = random.randint(0, 1)
         return torch.tensor([[random_action]], dtype=torch.long, device=self.device)
 
-
     def optimize_model(self):
         if len(self.memory) < self.BATCH_SIZE:
             return
-        #print("training...")
         transitions = self.memory.sample(self.BATCH_SIZE)
 
         batch = Transition(*zip(*transitions)) # batch.state mi passa un array di tutti gli stati
@@ -89,10 +75,11 @@ class DQNagent():
 
         with torch.no_grad():
             expected_state_action_values = self.GAMMA * self.target_net.forward(next_state).max(1)[0] + reward_batch
-        state_action_values = self.policy_net.forward(state_batch).gather(1, action_batch)
-        #print("State action values: ", state_action_values) -> tensore così: [[qValue], [qValue], ...
-        loss = self.criterion(state_action_values, expected_state_action_values.unsqueeze(1))
+        state_action_values = self.policy_net.forward(state_batch)
+        state_action_values = state_action_values.gather(1, action_batch)
         self.optimizer.zero_grad()
+        loss = self.criterion(state_action_values, expected_state_action_values.unsqueeze(1))
+        #print("Loss: ", loss)
         loss.backward()
 
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
@@ -108,24 +95,19 @@ class DQNagent():
 class ReplayMemory():
     def __init__(self, capacity=1000) -> None:
         self.memory = deque([], capacity)
-
     def push(self, *args):
         self.memory.append(Transition(*args))
-
     def sample(self, batch_size):
         return random.sample(self.memory, batch_size)
-
     def __len__(self):
         return len(self.memory)
 
 class DQNetwork(nn.Module):
-
     def __init__(self, observationLenght, n_actions):
         super(DQNetwork, self).__init__()
         self.layer1 = nn.Linear(observationLenght, 128)
         self.layer2 = nn.Linear(128, 128)
         self.layer3 = nn.Linear(128, n_actions)
-
     def forward(self, x):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))

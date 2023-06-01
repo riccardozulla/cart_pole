@@ -20,9 +20,11 @@ def plot_durations(show_result=False):
 
 EPISODES = 600
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-env = gym.make('CartPole-v1', render_mode = "human")
+env = gym.make('CartPole-v1') #, render_mode = "human")
 # agent = DQNagent(env, 4, 2, torch.nn.HuberLoss(), device)
+# agent = DQNagent(4, 2, torch.nn.SmoothL1Loss(), device) 
 agent = DQNagent(4, 2, torch.nn.SmoothL1Loss(), device) 
+
 
 episode_durations = []
 
@@ -41,6 +43,7 @@ for n in range(EPISODES):
             action = agent.step(state, torch.tensor([10], device=device))
             episode_durations.append(t + 1)
             plot_durations()
+            agent.epsDecay()
             break
         elif terminated: # failed
             print("Failed. Duration: ", t)
